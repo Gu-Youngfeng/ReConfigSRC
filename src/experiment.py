@@ -27,7 +27,7 @@ import numpy as np
 import os
 import sys
 
-def calculate_min_R(proj):
+def calculate_Nair_RD(proj):
 	"""
 	exp6: calculate the rank difference using "RankDiff" (proposed by Nair) on orignal results.
 	to return the average of rank difference list of top-1,3,5,10,20.
@@ -46,7 +46,7 @@ def calculate_min_R(proj):
 		# print(path)
 		pdcontent = pd.read_csv(path)
 		
-		truly_rank = [pdcontent.iloc[i]["truly_rank"] for i in range(30)]
+		truly_rank = [pdcontent.iloc[i]["act_rank"] for i in range(30)]
 		# print("top-10 actual  rank: ", truly_rank)
 		# print("top-10 minimal rank: ", np.min(truly_rank)-1)
 		minR_1 = min_of_top_k(truly_rank, k=1) -1
@@ -915,15 +915,22 @@ def compare_result_two_metrics(paths):
 	indx_10= 3
 	indx_20= 4
 
-	projs1 = ['rs-6d-c3-obj1', 'rs-6d-c3-obj2', 'sol-6d-c2-obj1', 'sol-6d-c2-obj2', 'wc+rs-3d-c4-obj1', 'wc+rs-3d-c4-obj2', 'wc+sol-3d-c4-obj1', 'wc+sol-3d-c4-obj2', 'wc+wc-3d-c4-obj1', 'wc+wc-3d-c4-obj2', 'wc-3d-c4-obj1', 'wc-3d-c4-obj2', 'wc-5d-c5-obj1', 'wc-5d-c5-obj2', 'wc-6d-c1-obj1', 'wc-6d-c1-obj2', 'wc-c1-3d-c1-obj1', 'wc-c1-3d-c1-obj2', 'wc-c3-3d-c1-obj1', 'wc-c3-3d-c1-obj2']
-	# boolean projects
-	projs2 = ['AJStats', 'Apache', 'BerkeleyC', 'BerkeleyJ', 'clasp', 'Dune', 'Hipacc', 'HSMGP_num', 'LLVM', 'lrzip', 'sac', 'spear', 'SQL', 'WGet', 'x264', 'XZ']
-	projs = projs1 + projs2
-	proj_id = 0
+	# projs1 = ['rs-6d-c3-obj1', 'rs-6d-c3-obj2', 'sol-6d-c2-obj1', 'sol-6d-c2-obj2', 'wc+rs-3d-c4-obj1', 'wc+rs-3d-c4-obj2', 'wc+sol-3d-c4-obj1', 'wc+sol-3d-c4-obj2', 'wc+wc-3d-c4-obj1', 'wc+wc-3d-c4-obj2', 'wc-3d-c4-obj1', 'wc-3d-c4-obj2', 'wc-5d-c5-obj1', 'wc-5d-c5-obj2', 'wc-6d-c1-obj1', 'wc-6d-c1-obj2', 'wc-c1-3d-c1-obj1', 'wc-c1-3d-c1-obj2', 'wc-c3-3d-c1-obj1', 'wc-c3-3d-c1-obj2']
+	# # boolean projects
+	# projs2 = ['AJStats', 'Apache', 'BerkeleyC', 'BerkeleyJ', 'clasp', 'Dune', 'Hipacc', 'HSMGP_num', 'LLVM', 'lrzip', 'sac', 'spear', 'SQL', 'WGet', 'x264', 'XZ']
+	# projs = projs1 + projs2
+	# proj_id = 0
 
-	print("Rank differences on 36 scenarios using RDTie and RD*\n")
+	projs = []
+	proj_id = 0
+	with open(paths[0]) as fi:
+		lines = fi.readlines()
+		for line in lines:
+			projs.append(line.split(":[[")[0])
+
+	print("Results: Stability comparison of RDTie and RD* on 50 datasets\n")
 	print("1) We calculate the rank difference of each scenario in cases of | Top-1 || Top-3 || Top-5 || Top-10 |.")
-	print("2) We compare the maximum, minimum, mean, stand devition of two measurements in | max min mean std |.\n")
+	print("2) We compare the maximum, minimum, mean, stand devition of two measurements in | min max mean std |.\n")
 
 	while indx_1 < len(results_pr):
 
@@ -976,22 +983,32 @@ def compare_result_fraction_parameters(paths):
 	indx_10= 3
 	indx_20= 4
 
-	projs1 = ['rs-6d-c3-obj1', 'rs-6d-c3-obj2', 'sol-6d-c2-obj1', 'sol-6d-c2-obj2', 'wc+rs-3d-c4-obj1', 'wc+rs-3d-c4-obj2', 'wc+sol-3d-c4-obj1', 'wc+sol-3d-c4-obj2', 'wc+wc-3d-c4-obj1', 'wc+wc-3d-c4-obj2', 'wc-3d-c4-obj1', 'wc-3d-c4-obj2', 'wc-5d-c5-obj1', 'wc-5d-c5-obj2', 'wc-6d-c1-obj1', 'wc-6d-c1-obj2', 'wc-c1-3d-c1-obj1', 'wc-c1-3d-c1-obj2', 'wc-c3-3d-c1-obj1', 'wc-c3-3d-c1-obj2']
-	# boolean projects
-	projs2 = ['AJStats', 'Apache', 'BerkeleyC', 'BerkeleyJ', 'clasp', 'Dune', 'Hipacc', 'HSMGP_num', 'LLVM', 'lrzip', 'sac', 'spear', 'SQL', 'WGet', 'x264', 'XZ']
-	projs = projs1 + projs2
-	proj_id = 0
+	# projs1 = ['rs-6d-c3-obj1', 'rs-6d-c3-obj2', 'sol-6d-c2-obj1', 'sol-6d-c2-obj2', 'wc+rs-3d-c4-obj1', 'wc+rs-3d-c4-obj2', 'wc+sol-3d-c4-obj1', 'wc+sol-3d-c4-obj2', 'wc+wc-3d-c4-obj1', 'wc+wc-3d-c4-obj2', 'wc-3d-c4-obj1', 'wc-3d-c4-obj2', 'wc-5d-c5-obj1', 'wc-5d-c5-obj2', 'wc-6d-c1-obj1', 'wc-6d-c1-obj2', 'wc-c1-3d-c1-obj1', 'wc-c1-3d-c1-obj2', 'wc-c3-3d-c1-obj1', 'wc-c3-3d-c1-obj2']
+	# # boolean projects
+	# projs2 = ['AJStats', 'Apache', 'BerkeleyC', 'BerkeleyJ', 'clasp', 'Dune', 'Hipacc', 'HSMGP_num', 'LLVM', 'lrzip', 'sac', 'spear', 'SQL', 'WGet', 'x264', 'XZ']
+	# projs = projs1 + projs2
+	# proj_id = 0
 
-	print("Rank differences using ReConfig with different filter ratios (90%, 80%, 70%, 60%)\n")
-	print("1) We calculate the rank difference of each scenario in cases of | Top-1 | Top-3 | Top-5 | Top-10 |.")
+	projs = []
+	proj_id = 0
+	with open(paths[0]) as fi:
+		lines = fi.readlines()
+		for line in lines:
+			projs.append(line.split(":[[")[0])
+
+	print("RDTie of each dataset using ReConfig with different filter ratios (90%, 80%, 70%)\n")
+	print("1) We calculate the RDTie of each scenario in cases of | Top-1 | Top-3 | Top-5 | Top-10 |.")
 	print("2) The order of filter ratios is | 90%  80%  70% |.\n")
 
+	print("| %-18s | %-8s %-8s %-8s | %-8s %-8s %-8s | %-8s %-8s %-8s | %-8s %-8s %-8s |"%("Datasets","90%","80%","70%","90%","80%","70%","90%","80%","70%","90%","80%","70%"))
+	print("----------------------")
+
 	while indx_1 < len(results_cfgrank_9):
-		print("| %-17s |" % projs[proj_id], end=" ")
-		print(" %8.3f  %8.3f  %8.3f |" % (np.mean(results_cfgrank_9[indx_1]), np.mean(results_cfgrank_8[indx_1]), np.mean(results_cfgrank_7[indx_1])), end=" ")
-		print(" %8.3f  %8.3f  %8.3f |" % (np.mean(results_cfgrank_9[indx_3]), np.mean(results_cfgrank_8[indx_3]), np.mean(results_cfgrank_7[indx_3])), end=" ")
-		print(" %8.3f  %8.3f  %8.3f |" % (np.mean(results_cfgrank_9[indx_5]), np.mean(results_cfgrank_8[indx_5]), np.mean(results_cfgrank_7[indx_5])), end=" ")
-		print(" %8.3f  %8.3f  %8.3f |" % (np.mean(results_cfgrank_9[indx_10]), np.mean(results_cfgrank_8[indx_10]), np.mean(results_cfgrank_7[indx_10])))
+		print("| %-18s |" % projs[proj_id], end=" ")
+		print("%-8.3f %-8.3f %-8.3f |" % (np.mean(results_cfgrank_9[indx_1]), np.mean(results_cfgrank_8[indx_1]), np.mean(results_cfgrank_7[indx_1])), end=" ")
+		print("%-8.3f %-8.3f %-8.3f |" % (np.mean(results_cfgrank_9[indx_3]), np.mean(results_cfgrank_8[indx_3]), np.mean(results_cfgrank_7[indx_3])), end=" ")
+		print("%-8.3f %-8.3f %-8.3f |" % (np.mean(results_cfgrank_9[indx_5]), np.mean(results_cfgrank_8[indx_5]), np.mean(results_cfgrank_7[indx_5])), end=" ")
+		print("%-8.3f %-8.3f %-8.3f |" % (np.mean(results_cfgrank_9[indx_10]), np.mean(results_cfgrank_8[indx_10]), np.mean(results_cfgrank_7[indx_10])))
 		
 		indx_1 += 5
 		indx_3 += 5
@@ -1683,7 +1700,7 @@ def calculate_rdtie_of_project(projs):
 
 	# ## using original predicted results (rank-based approach)
 	# Do not remove any configurations
-	print("Rank difference using Rank-based")
+	print("RDTie using Rank-based")
 	for proj in new_projs:
 		results = calculate_RDTie(proj)
 		line = proj+":"+str(results)+"\n"
@@ -1694,7 +1711,7 @@ def calculate_rdtie_of_project(projs):
 
 	# ## using Classification (Random Forest, method=0)
 	# Remove 90% tied configurations
-	print("Rank difference using Classification (random forest)")
+	print("RDTie using Classification (random forest)")
 	for proj in new_projs:
 		results = calculate_RDTie_filter(proj, method=0, frac=0.9)
 		line = proj+":"+str(results)+"\n"
@@ -1705,7 +1722,7 @@ def calculate_rdtie_of_project(projs):
     
 	# ## using Random
 	# Remove 90% tied configurations
-	print("Rank difference using Random Deletion")
+	print("RDTie using Random Deletion")
 	for proj in new_projs:
 		results = calculate_RDTie_filter(proj, method=1, frac=0.9)
 		line = proj+":"+str(results)+"\n"
@@ -1715,7 +1732,7 @@ def calculate_rdtie_of_project(projs):
 			f.write(line)
 
 	# # ## using Direct LTR
-	# print("Rank difference using direct LTR")
+	# print("RDTie using direct LTR")
 	# for proj in new_projs:
 	# 	results = calculate_RDTie_filter(proj, method=2, frac=0.9)
 	# 	line = proj+":"+str(results)+"\n"
@@ -1726,7 +1743,7 @@ def calculate_rdtie_of_project(projs):
 
 	# ## using ReConfig (method=1)
 	# Remove 90% tied configurations
-	print("Rank difference using ReConfig")
+	print("RDTie using ReConfig")
 	for proj in new_projs:
 		results = calculate_RDTie_filter(proj, method=3, frac=0.9)
 		line = proj+":"+str(results)+"\n"
@@ -1737,7 +1754,7 @@ def calculate_rdtie_of_project(projs):
     
 	# # ## using Outlier detection (One class svm)
 	# # Remove the configurations predicted as -1 (outlier)
-	# print("Rank difference using Outlier Detection (one class svm)")
+	# print("RDTie using Outlier Detection (one class svm)")
 	# for proj in new_projs:
 	# 	results = calculate_RDTie_outlier(proj)
 	# 	line = proj+":"+str(results)+"\n"
@@ -1749,45 +1766,44 @@ def calculate_rdtie_of_project(projs):
 
 
 	################################################################################
-	"""
-	# ## using RD* (Nair et al.)
-	print("Rank difference using RD* (Nair et al.)")
+
+	## using RD* (Nair et al.)
+	print("RDTie using RD* (Nair et al.)")
 	for proj in new_projs:
-		results = calculate_min_R(proj)
+		results = calculate_Nair_RD(proj)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
-		result_text = "../experiment/results/Nair_RDs.txt"
+		result_text = "../experiment/results/Nair_RD.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
 
 	# ## using reConfig with different filter ratios
-	print("Rank difference using reConfig with the filter ratio of 80%")
+	print("RDTie using reConfig with the filter ratio of 80%")
 	for proj in new_projs:
-		results = calculate_rds_proba_filter(proj, method=1, frac=0.8)
+		results = calculate_RDTie_filter(proj, method=3, frac=0.8)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
-		result_text = "../experiment/results/LTR_eight_RDs.txt"
+		result_text = "../experiment/results/reconfig_RDTie_0.8.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
 
-	print("Rank difference using reConfig with the filter ratio of 70%")
+	print("RDTie using reConfig with the filter ratio of 70%")
 	for proj in new_projs:
-		results = calculate_rds_proba_filter(proj, method=1, frac=0.7)
+		results = calculate_RDTie_filter(proj, method=3, frac=0.7)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
-		result_text = "../experiment/results/LTR_seven_RDs.txt"
+		result_text = "../experiment/results/reconfig_RDTie_0.7.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
 
-	print("Rank difference using ReConfig with the filter ratio of 60%")
+	print("RDTie using ReConfig with the filter ratio of 60%")
 	for proj in new_projs:
-		results = calculate_rds_proba_filter(proj, method=1, frac=0.6)
+		results = calculate_RDTie_filter(proj, method=3, frac=0.6)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
-		result_text = "../experiment/results/LTR_six_RDs.txt"
+		result_text = "../experiment/results/reconfig_RDTie_0.6.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
-	"""
 	#################################################################################
 
 
@@ -1822,8 +1838,8 @@ def answering_rq_3(projs):
 	print("\nRQ3: How many tied configurations should be filtered out in ReConfig?")
 	print("--------------------")
 	# detailed results of RQ3
-	compare_result_fraction_parameters(['../experiment/results/LTR_RDs.txt', '../experiment/results/LTR_eight_RDs.txt', 
-										'../experiment/results/LTR_seven_RDs.txt', '../experiment/results/LTR_six_RDs.txt'])
+	compare_result_fraction_parameters(['../experiment/results/reconfig_RDTie.txt', '../experiment/results/reconfig_RDTie_0.8.txt', 
+										'../experiment/results/reconfig_RDTie_0.7.txt', '../experiment/results/reconfig_RDTie_0.6.txt'])
 
 	# results visiualized in RQ3
 	# for i in range(len(projs)):
@@ -1836,7 +1852,7 @@ def answering_rq_4(projs):
 	print("\nRQ4: Is RDTie stable for evaluating the tied prediction?")
 	print("--------------------")
 	# detailed results of RQ4
-	compare_result_two_metrics(['../experiment/results/Origin_RDs.txt', '../experiment/results/Nair_RDs.txt'])
+	compare_result_two_metrics(['../experiment/results/reconfig_RDTie.txt', '../experiment/results/Nair_RD.txt'])
 
 	# results visiualized in RQ4
 	# for i in range(len(projs)):
