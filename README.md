@@ -1,8 +1,8 @@
-# ReConfigSRC
-
+## ReConfigSRC
+---
 ### 1. Introduction
 
-ReConfigSRC implements the experiments of ReConfig approach.
+Project _ReConfigSRC_ implements the experiments of ReConfig approach.
 
 
 ### 2. Environment & Dependency
@@ -13,7 +13,7 @@ The dependencies include three widely-used Python libraries, i.e., **numpy**, **
 
 ### 3. Experimental Steps
 
-Step 1: initialize the raw dataset
+**Step 1:** prepare the raw datasets
 
 Put the raw datasets (.csv format) into the folder `raw_data/`, note that the last column (performance) of each dataset should start with "$<". 
 For example, the dataset of _Noc-obj1.csv_ is as follows,
@@ -27,21 +27,21 @@ For example, the dataset of _Noc-obj1.csv_ is as follows,
 | ...|...| ...| ...| ...|
 
 
-Step 2: get the results of the rank-based approach
+**Step 2:** obtain the results of the rank-based approach
 
 Run the rank-based approach (i.e, `src/rank_based.py`) and obtain the prediction results, which are outputted into the folder `experiment/rank_based/`.
 
-```
+```python
 >> python src/rank-based.py
 ```
 
-Step 3: get the results of the other approaches
+**Step 3:** obtain the results of the other approaches
 
 Run the other approaches (i.e., `src/outlier_detection.py`, `src/classfication.py`, `src/random_rank.py`, `src/reconfig.py`, and `src/direct_ltr.py`) 
 and obtain the corresponding ranking results, which are outputted into the folder `experiment/${approach_name}`.
 Note that these five approaches are based on the prediction results of the rank-based approach (outputs of Step 2).
 
-```
+```python
 >> python src/classfication.py
 >> python src/outlier_detection.py
 >> python src/random_rank.py
@@ -49,15 +49,15 @@ Note that these five approaches are based on the prediction results of the rank-
 >> python src/reconfig.py
 ```
 
-Step 4: analyze the ranking results
+**Step 4:** analyze the ranking results
 
-Run the experiments with given commands.
+Run the `src/experiment.py` with command to obtain the analysis results under the folder `experiment/results/` then get the answers of RQ1, RQ2, RQ3, and RQ4.
 
+```python
+>> python src/experiment.py calRDTie
 ```
->> python src/experiment.py ${command}
-```
 
-The following table shows the given commands in `src/experiment.py`
+The other commands of `src/experiment.py` are as follows,
 
 | Command | Description |
 |:--|:--|
