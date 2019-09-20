@@ -18,7 +18,7 @@ Step 1: initialize the raw dataset
 Put the raw datasets (.csv format) into the folder `raw_data/`, note that the last column (performance) of each dataset should start with "$<". 
 For example, the dataset of _Noc-obj1.csv_ is as follows,
 
-```
+
 |width| complexity| fifo| multiplier| $<energy|
 |:--|:--|:--|:--|:--|
 | 3.0| 1| 4.0| 1| 7.8351029794899985| 
@@ -26,14 +26,13 @@ For example, the dataset of _Noc-obj1.csv_ is as follows,
 | 3.0| 1| 2.0| 100| 9.965784284660002| 
 | ...|...| ...| ...| ...|
 
-```
 
 Step 2: get the results of the rank-based approach
 
 Run the rank-based approach (i.e, `src/rank_based.py`) and obtain the prediction results, which are outputted into the folder `experiment/rank_based/`.
 
 ```
-python src/rank-based.py
+>> python src/rank-based.py
 ```
 
 Step 3: get the results of the other approaches
@@ -43,11 +42,11 @@ and obtain the corresponding ranking results, which are outputted into the folde
 Note that these five approaches are based on the prediction results of the rank-based approach (outputs of Step 2).
 
 ```
-python src/classfication.py
-python src/outlier_detection.py
-python src/random_rank.py
-python src/direct_ltr.py
-python src/reconfig.py
+>> python src/classfication.py
+>> python src/outlier_detection.py
+>> python src/random_rank.py
+>> python src/direct_ltr.py
+>> python src/reconfig.py
 ```
 
 Step 4: analyze the ranking results
@@ -55,7 +54,7 @@ Step 4: analyze the ranking results
 Run the experiments with given commands.
 
 ```
-python src/experiment.py ${command}
+>> python src/experiment.py ${command}
 ```
 
 The following table shows the given commands in `src/experiment.py`
