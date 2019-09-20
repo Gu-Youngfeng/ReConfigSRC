@@ -127,7 +127,7 @@ def remove_list_from(source_lst, remove_lst):
 	return remain_lst
 
 
-def return_remain_ranks(actual_lst, flags, frac=0.9):
+def return_remain_ranks(actual_lst, flags, frac):
 	"""
 	to remove the 90% ranks in actual ranks (actual_lst) using prediction identical indexes (flags)
 	If the identical block contains less than 10 configurations, then we do not remove any configuration.
@@ -384,33 +384,33 @@ def generate_new_rank(actual_rank, identical_indexes, k):
 	@ param identical_indexes: prediction identical indexes
 	@ param k: top-k
 	"""
-	if len(actual_rank) <= k: # incase that the size of actual rank is smaller than k
+	if len(actual_rank) <= k: # if the size of actual rank is smaller than k
 		return actual_rank
 
 	rank_new = []
-	rl = -1
-	m = -1
+	pl = -1  # upper bound of tied configs
+	m = -1  # tied nums
 
 	for i in range(len(identical_indexes)-1):
 		if identical_indexes[i+1] > k:
 			m = identical_indexes[i+1] - identical_indexes[i]
-			rl = identical_indexes[i]
+			pl = identical_indexes[i]
 			break
 
-	ru = rl + m - 1
+	pu = pl + m - 1  # bottom bound of tied configs
 	# print("[m]:", m)
-	# print("[rl]:", rl)
-	# print("[ru]:", ru)
+	# print("[pl]:", pl)
+	# print("[pu]:", pu)
 
-	if ru == k: # perfectly split by k
-		for ii in range(ru):
-			rank_new.append(actual_rank[ii])
-	else: # ru > k
-		for ii in range(rl-1):
-			rank_new.append(actual_rank[ii])
-		t = k - rl + 1
-
-		r_m = actual_rank[rl-1:ru]
+	if pu == k: # perfectly split by k
+		for i in range(pu):
+			rank_new.append(actual_rank[i])
+	else: # pu > k
+		for i in range(pl-1):
+			rank_new.append(actual_rank[i])
+		
+		t = k - pl + 1  # nums above the k
+		r_m = actual_rank[pl-1:pu]
 		# print(r_m)
 		r_m = sorted(r_m)
 		# print(r_m)
@@ -436,7 +436,7 @@ def generate_new_rank(actual_rank, identical_indexes, k):
 	return rank_new
 
 
-def calculate_rds_proba(proj):
+def calculate_RDTie(proj):
 	"""
 	to calculate the RDTie of dataset ${proj} using Rank based method
 	do not remove any configurations
@@ -481,16 +481,23 @@ def calculate_rds_proba(proj):
 	return minRank_lst
 
 
-def calculate_rds_proba_filter(proj, method=0, frac=0.9):
+def calculate_RDTie_filter(proj, method=0, frac=0.9):
 	"""
 	to calculate the new rank difference RDTie by filtering out the 90% last ranks
-	@ param method=0, Random Forest 
-	        method=1, Reconfig
+	@ param method=0, classification 
+			method=1, rankdom rank
+			method=2, direct_ltr
+			method=3, reconfig
 	@ param frac, removation ratio, default frac is 0.9
 	"""
+	if method > 3:
+		print("[ERROR]: Parameter method should be 0, 1, 2, or 3 in function calculate_RDTie_filter()")
+		return None
 	minRank_lst = [] # to save the list of rank_lst
 
 	filtered_dir = ["../experiment/classification/", # classification
+					"../experiment/random_rank/", # random_rank
+					"../experiment/direct_ltr", # direct_ltr
 					"../experiment/reconfig/"] # reconfig
 
 	csv_files = [file for file in os.listdir(filtered_dir[method] + "/" + proj + "/") if ".csv" in file]
@@ -499,15 +506,18 @@ def calculate_rds_proba_filter(proj, method=0, frac=0.9):
 		# print(csv_file)
 		csv_file = filtered_dir[method] + "/" + proj + "/" + csv_file
 		# print(csv_file)
-		pdcontent = pd.read_csv(csv_file, dtype={"truly_performance": np.float32, "predicted": np.float32})
+		pdcontent = pd.read_csv(csv_file, dtype={"act_performance": np.float32, "pre_performance": np.float32})
 
-		predict = [pdcontent.iloc[i]["predicted"] for i in range(len(pdcontent))]
+		# predict = [pdcontent.iloc[i]["pre_performance"] for i in range(len(pdcontent))]
 
-		actual = []
-		if method == 1:
-			actual = [pdcontent.iloc[i]["truly"] for i in range(len(pdcontent))]
-		else:
-			actual = [pdcontent.iloc[i]["truly_performance"] for i in range(len(pdcontent))]
+		# actual = []
+		# if method == 1:
+		# 	actual = [pdcontent.iloc[i]["act_performance"] for i in range(len(pdcontent))]
+		# else:
+		# 	actual = [pdcontent.iloc[i]["act_performance"] for i in range(len(pdcontent))]
+
+		predict = pdcontent["pre_performance"]
+		actual = pdcontent["act_performance"]
 
 		actual_rank = return_rank_min(actual) # actual rank
 		# print("[actual rank]:", actual_rank)
@@ -566,8 +576,8 @@ def calculate_rds_proba_random(proj):
 		identical_indexes = remove_list_by_fraction(predict) # split indexes
 		# print("[indexes:]", identical_indexes)		
 
-		actual_rank = return_remain_ranks_random(actual_rank, identical_indexes) # remove actual rank
-		predict = return_remain_ranks(predict, identical_indexes)
+		actual_rank = return_remain_ranks_random(actual_rank, identical_indexes, frac=0.9) # remove actual rank
+		predict = return_remain_ranks(predict, identical_indexes, frac=0.9)
 
 		#
 		identical_indexes = remove_list_by_fraction(predict)
@@ -588,7 +598,7 @@ def calculate_rds_proba_random(proj):
 	return minRank_lst
 
 
-def calculate_rds_proba_outlier(proj):
+def calculate_RDTie_outlier(proj):
 	"""
 	exp7: to calculate the new rank difference by filtering out the 90% last ranks
 	:: outlier deletion
@@ -604,10 +614,10 @@ def calculate_rds_proba_outlier(proj):
 		csv_file = ocs_dir + proj + "/rank_based" + str(i) + ".csv"
 		# csv_file = origin_dir + proj + "/rank_based22.csv"
 
-		pdcontent = pd.read_csv(csv_file, dtype={"truly_performance":np.float32, "predicted":np.float32})
+		pdcontent = pd.read_csv(csv_file, dtype={"act_performance":np.float32, "pre_performance":np.float32})
 
-		predict = [pdcontent.iloc[i]["predicted"] for i in range(len(pdcontent))]
-		actual = [pdcontent.iloc[i]["truly_performance"] for i in range(len(pdcontent))]
+		predict = [pdcontent.iloc[i]["pre_performance"] for i in range(len(pdcontent))]
+		actual = [pdcontent.iloc[i]["act_performance"] for i in range(len(pdcontent))]
 		anomaly_indexes = [i for i in range(len(pdcontent)) if pdcontent.iloc[i]["isAnomaly"] == -1]
 		# remove the configuration labeled with -1
 		# print(anomaly_indexes)
@@ -736,10 +746,12 @@ def compare_result_bet_methods(projs, rank_base_path, reconfig_path):
 			new_projs.append(proj)
 	proj_id = 0
 
-	print("Rank differences on 36 scenarios using ReConfig and the rank-based approach\n")
-	print("1) We calculate the rank differences of each scenario in cases of | Top-1 | Top-3 | Top-5 | Top-10 |.")
-	print("2) We compare the rank differences of these two appraoch in 50 repeats | mean(Rank-based) | mean(ReConfig) | win /draw/ loss |.\n")
+	print("Results: RDTie on 50 dataset using the rank-based(RaB) and ReConfig(ReC) approach\n")
+	print("1) We calculate the RDTie of each dataset in cases of | Top-1 | Top-3 | Top-5 | Top-10 |.")
+	print("2) We compare the RDTie of these two appraoch in 50 repeats | mean(Rank-based) | mean(ReConfig) | win /draw/ loss |.\n")
 
+	print("| %-18s | %-8s | %-8s | %-2s / %-2s/ %-2s| %-8s | %-8s | %-2s / %-2s/ %-2s| %-8s | %-8s | %-2s / %-2s/ %-2s| %-8s | %-8s | %-2s / %-2s/ %-2s|"%("Datasets","RaB(1)","ReC(1)","W","D","L","RaB(3)","ReC(3)","W","D","L","RaB(5)","ReC(5)","W","D","L","RaB(10)","ReC(10)","W","D","L"))
+	print("----------------------")
 	while indx_1 < len(results_1):
 
 		win1_lst = get_wdl_bet_lst(results_1[indx_1], results_2[indx_1])
@@ -836,6 +848,58 @@ def compare_result_six_methods(paths):
 	# 	indx_10 += 5
 	# 	indx_20 += 5
 	# 	proj_id += 1
+
+
+def compare_results_of_four_methods(paths):
+	"""
+	compare rank differences between 6 methods
+	:: paths= [ReConfig, Rank_based, Classification, Random deletion]
+	"""
+	results_rc = obtain_results_from_result(paths[0])
+	results_rb = obtain_results_from_result(paths[1])
+	# results_od = obtain_results_from_result(paths[2])
+	results_cf = obtain_results_from_result(paths[2])
+	results_rd = obtain_results_from_result(paths[3])
+	# results_dl = obtain_results_from_result(paths[5])
+
+	indx_1 = 0
+	indx_3 = 1
+	indx_5 = 2
+	indx_10= 3
+	indx_20= 4
+
+	# projs1 = ['rs-6d-c3-obj1', 'rs-6d-c3-obj2', 'sol-6d-c2-obj1', 'sol-6d-c2-obj2', 'wc+rs-3d-c4-obj1', 'wc+rs-3d-c4-obj2', 'wc+sol-3d-c4-obj1', 'wc+sol-3d-c4-obj2', 'wc+wc-3d-c4-obj1', 'wc+wc-3d-c4-obj2', 'wc-3d-c4-obj1', 'wc-3d-c4-obj2', 'wc-5d-c5-obj1', 'wc-5d-c5-obj2', 'wc-6d-c1-obj1', 'wc-6d-c1-obj2', 'wc-c1-3d-c1-obj1', 'wc-c1-3d-c1-obj2', 'wc-c3-3d-c1-obj1', 'wc-c3-3d-c1-obj2']
+	# # boolean projects
+	# projs2 = ['AJStats', 'Apache', 'BerkeleyC', 'BerkeleyJ', 'clasp', 'Dune', 'Hipacc', 'HSMGP_num', 'LLVM', 'lrzip', 'sac', 'spear', 'SQL', 'WGet', 'x264', 'XZ']
+	# projs = projs1 + projs2
+	# proj_id = 0
+
+	projs = []
+	proj_id = 0
+	with open(paths[0]) as fi:
+		lines = fi.readlines()
+		for line in lines:
+			projs.append(line.split(":[[")[0])
+
+	print("Results: RDTie on 50 datasets using ReConfig, rank-based, classification, and random_rank approaches\n")
+	print("1) We calculate the RDTie of each dataset in cases of | Top-1 | Top-3 | Top-5 | Top-10 |.")
+	print("2) The order of comparative approaches is | ReConfig, rank-based, classification, random rank |.\n")
+
+	print("| %-18s | %-5s %-5s %-5s %-5s | %-5s %-5s %-5s %-5s | %-5s %-5s %-5s %-5s | %-5s %-5s %-5s %-5s |"%("Datasets","ReC","RaB","ClF","RaR","ReC","RaB","ClF","RaR","ReC","RaB","ClF","RaR","ReC","RaB","ClF","RaR"))
+	print("----------------------")
+	while indx_1 < len(results_rc):
+
+		print("| %-18s |" % projs[proj_id], end=" ")
+		print("%-5.1f %-5.1f %-5.1f %-5.1f "%(np.mean(results_rc[indx_1]), np.mean(results_rb[indx_1]), np.mean(results_cf[indx_1]), np.mean(results_rd[indx_1])), end="| ")
+		print("%-5.1f %-5.1f %-5.1f %-5.1f "%(np.mean(results_rc[indx_3]), np.mean(results_rb[indx_3]), np.mean(results_cf[indx_3]), np.mean(results_rd[indx_3])), end="| ")
+		print("%-5.1f %-5.1f %-5.1f %-5.1f "%(np.mean(results_rc[indx_5]), np.mean(results_rb[indx_5]), np.mean(results_cf[indx_5]), np.mean(results_rd[indx_5])), end="| ")
+		print("%-5.1f %-5.1f %-5.1f %-5.1f |"%(np.mean(results_rc[indx_10]), np.mean(results_rb[indx_10]), np.mean(results_cf[indx_10]), np.mean(results_rd[indx_10])))		
+		indx_1 += 5
+		indx_3 += 5
+		indx_5 += 5
+		indx_10 += 5
+		indx_20 += 5
+		proj_id += 1
 
 
 def compare_result_two_metrics(paths):
@@ -1604,7 +1668,7 @@ def draw_same_top1_barplot(projs, datas):
 def calculate_rdtie_of_project(projs):
 	"""
 	to calculate the RDTie of each dataset using different approaches,
-	:: these results will be saved in txt file under the director "../experiments/results/"
+	:: these results will be saved in txt file under the director "../experiment/results/"
 	"""
 	new_projs = []
 	for proj in projs:
@@ -1613,7 +1677,7 @@ def calculate_rdtie_of_project(projs):
 	print(new_projs)
 	print("-------------------------")
 
-	results_path = "../experiment/results/" # making directory to save the results of each approach
+	results_path = "../experiment/results/" # create directory "experiment/results" to save the results of each approach
 	if not os.path.exists(results_path):
 		os.makedirs(results_path)
 
@@ -1621,66 +1685,68 @@ def calculate_rdtie_of_project(projs):
 	# Do not remove any configurations
 	print("Rank difference using Rank-based")
 	for proj in new_projs:
-		results = calculate_rds_proba(proj)
+		results = calculate_RDTie(proj)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
 		result_text = "../experiment/results/rank_based_RDTie.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
 
+	# ## using Classification (Random Forest, method=0)
+	# Remove 90% tied configurations
+	print("Rank difference using Classification (random forest)")
+	for proj in new_projs:
+		results = calculate_RDTie_filter(proj, method=0, frac=0.9)
+		line = proj+":"+str(results)+"\n"
+		# print(line)
+		result_text = "../experiment/results/classification_RDTie.txt"
+		with open(result_text, "a") as f:
+			f.write(line)
+    
+	# ## using Random
+	# Remove 90% tied configurations
+	print("Rank difference using Random Deletion")
+	for proj in new_projs:
+		results = calculate_RDTie_filter(proj, method=1, frac=0.9)
+		line = proj+":"+str(results)+"\n"
+		# print(line)
+		result_text = "../experiment/results/random_rank_RDTie.txt"
+		with open(result_text, "a") as f:
+			f.write(line)
+
+	# # ## using Direct LTR
+	# print("Rank difference using direct LTR")
+	# for proj in new_projs:
+	# 	results = calculate_RDTie_filter(proj, method=2, frac=0.9)
+	# 	line = proj+":"+str(results)+"\n"
+	# 	# print(line)
+	# 	result_text = "../experiment/results/direct_ltr_RDTie.txt"
+	# 	with open(result_text, "a") as f:
+	# 		f.write(line)
+
 	# ## using ReConfig (method=1)
 	# Remove 90% tied configurations
 	print("Rank difference using ReConfig")
 	for proj in new_projs:
-		results = calculate_rds_proba_filter(proj, method=1)
+		results = calculate_RDTie_filter(proj, method=3, frac=0.9)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
 		result_text = "../experiment/results/reconfig_RDTie.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
-
-	# # ## using Classification (Random Forest, method=0)
-	# # Remove 90% tied configurations
-	# print("Rank difference using Classification (random forest)")
-	# for proj in new_projs:
-	# 	results = calculate_rds_proba_filter(proj, method=0)
-	# 	line = proj+":"+str(results)+"\n"
-	# 	# print(line)
-	# 	result_text = "../experiment/results/RF_RDs.txt"
-	# 	with open(result_text, "a") as f:
-	# 		f.write(line)
-    
-	# # ## using Random
-	# # Remove 90% tied configurations
-	# print("Rank difference using Random Deletion")
-	# for proj in new_projs:
-	# 	results = calculate_rds_proba_random(proj)
-	# 	line = proj+":"+str(results)+"\n"
-	# 	# print(line)
-	# 	result_text = "../experiment/results/Random_RDs.txt"
-	# 	with open(result_text, "a") as f:
-	# 		f.write(line)
     
 	# # ## using Outlier detection (One class svm)
 	# # Remove the configurations predicted as -1 (outlier)
 	# print("Rank difference using Outlier Detection (one class svm)")
 	# for proj in new_projs:
-	# 	results = calculate_rds_proba_outlier(proj)
+	# 	results = calculate_RDTie_outlier(proj)
 	# 	line = proj+":"+str(results)+"\n"
 	# 	# print(line)
-	# 	result_text = "../experiment/results/OCS_RDs.txt"
+	# 	result_text = "../experiment/results/outlier_detection_RDTie.txt"
 	# 	with open(result_text, "a") as f:
 	# 		f.write(line)
 
-	# # ## using Direct LTR (with 20%)
-	# print("Rank difference using direct LTR")
-	# for proj in new_projs:
-	# 	results = calculate_rds_proba_comparison(proj)
-	# 	line = proj+":"+str(results)+"\n"
-	# 	# print(line)
-	# 	result_text = "../experiment/results/LTR_DIR_RDs.txt"
-	# 	with open(result_text, "a") as f:
-	# 		f.write(line)
+
 
 	################################################################################
 	"""
@@ -1730,7 +1796,7 @@ def answering_rq_1(projs):
 	print("\nRQ1: Can ReConfig find better configurations than the rank-based approach?")
 	print("--------------------")
 	# detailed results of RQ1 (Table III)
-	compare_result_bet_methods(projs, '../experiment/results/Origin_RDs.txt', '../experiment/results/LTR_RDs.txt')
+	compare_result_bet_methods(projs, '../experiment/results/rank_based_RDTie.txt', '../experiment/results/reconfig_RDTie.txt')
 
 
 def answering_rq_2(projs):
@@ -1738,9 +1804,13 @@ def answering_rq_2(projs):
 	print("\nRQ2: Can the learning-to-rank method in ReConfig outperform comparative methods in finding configurations?")
 	print("--------------------")
 	# detailed results of RQ2.
-	paths = ['../experiment/results/LTR_RDs.txt', '../experiment/results/Origin_RDs.txt', '../experiment/results/OCS_RDs.txt', 
-	'../experiment/results/RF_RDs.txt', '../experiment/results/Random_RDs.txt', '../experiment/results/LTR_DIR_RDs.txt']
-	compare_result_six_methods(paths)
+	# paths = ['../experiment/results/LTR_RDs.txt', '../experiment/results/Origin_RDs.txt', '../experiment/results/OCS_RDs.txt', 
+	# '../experiment/results/RF_RDs.txt', '../experiment/results/Random_RDs.txt', '../experiment/results/LTR_DIR_RDs.txt']
+	# compare_result_six_methods(paths)
+
+	paths = ['../experiment/results/reconfig_RDTie.txt', '../experiment/results/rank_based_RDTie.txt', 
+			 '../experiment/results/classification_RDTie.txt', '../experiment/results/random_rank_RDTie.txt']
+	compare_results_of_four_methods(paths)
 
 	# results visiualized in RQ2
 	# for i in range(len(projs)):
@@ -1779,7 +1849,7 @@ def show_argv():
 	cmd_descripts = ["Showing the basic information (e.g., options and dataset size) in each dataset.", 
 					 "Drawing the performance distribution of specific dataset.", 
 					 "Drawing the number of tied configuretions in each datasets using the rank-based method.",
-					 "Calculating the RDTie of each approach using different methods.",
+					 "Calculating the RDTie of each dataset using different methods.",
 					 "RQ-1: Can ReConfig find better configurations than the rank-based approach?",
 					 "RQ-2: Can the learning-to-rank method in ReConfig outperform comparative methods in finding configurations?",
 					 "RQ-3: How many tied configurations should be filtered out in ReConfig?",
