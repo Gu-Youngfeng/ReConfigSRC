@@ -1,5 +1,5 @@
 ## ReConfigSRC
----
+
 ### 1. Introduction
 
 Project _ReConfigSRC_ implements the experiments of ReConfig approach.
@@ -69,6 +69,8 @@ The other commands of `src/experiment.py` are as follows,
 | vsOthers | RQ-2: Can the learning-to-rank method in ReConfig outperform comparative methods in finding configurations?|
 | removeRatio | RQ-3: How many tied configurations should be filtered out in ReConfig?|
 | vsRD | RQ-4: Is RDTie stable for evaluating the tied prediction?| 
+
+> Note: The newly-submited `src/execute.py` is another user interface of step-2 to step-4, that is, you can only run the `src/execute.py` at once instead of running python files (step-2 to step-4) step by step. 
 
 
 
