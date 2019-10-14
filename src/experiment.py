@@ -27,7 +27,7 @@ import numpy as np
 import os
 import sys
 
-def calculate_Nair_RD(proj):
+def calculate_RD_rankbased(proj):
 	"""
 	exp6: calculate the rank difference using "RankDiff" (proposed by Nair) on orignal results.
 	to return the average of rank difference list of top-1,3,5,10,20.
@@ -43,6 +43,41 @@ def calculate_Nair_RD(proj):
 	# for index in rd_index:
 
 		path = root_dir + proj + "/rank_based" + str(index) + ".csv"
+		# print(path)
+		pdcontent = pd.read_csv(path)
+		
+		truly_rank = [pdcontent.iloc[i]["act_rank"] for i in range(30)]
+		# print("top-10 actual  rank: ", truly_rank)
+		# print("top-10 minimal rank: ", np.min(truly_rank)-1)
+		minR_1 = min_of_top_k(truly_rank, k=1) -1
+		minR_3 = min_of_top_k(truly_rank, k=3) -1
+		minR_5 = min_of_top_k(truly_rank, k=5) -1
+		minR_10= min_of_top_k(truly_rank, k=10) -1
+		minR_20= min_of_top_k(truly_rank, k=20) -1
+		
+		min_rank.append([minR_1, minR_3, minR_5, minR_10, minR_20])
+
+	# print(min_rank)
+	# result = average_of_couple_lst(min_rank)
+	return min_rank
+
+
+def calculate_RD_reconfig(proj):
+	"""
+	exp6: calculate the rank difference using "RankDiff" (proposed by Nair) on orignal results.
+	to return the average of rank difference list of top-1,3,5,10,20.
+	"""
+	min_rank = []
+
+	root_dir = "../experiment/reconfig/"
+
+	# total = range(50)
+	# rd_index = rd.sample(total, 40)
+
+	for index in range(50):  # for each csv
+	# for index in rd_index:
+
+		path = root_dir + proj + "/newRankedList" + str(index) + ".csv"
 		# print(path)
 		pdcontent = pd.read_csv(path)
 		
@@ -497,10 +532,10 @@ def calculate_RDTie_filter(proj, method=0, frac=0.9):
 
 	filtered_dir = ["../experiment/classification/", # classification
 					"../experiment/random_rank/", # random_rank
-					"../experiment/direct_ltr", # direct_ltr
+					"../experiment/direct_ltr/", # direct_ltr
 					"../experiment/reconfig/"] # reconfig
 
-	csv_files = [file for file in os.listdir(filtered_dir[method] + "/" + proj + "/") if ".csv" in file]
+	csv_files = [file for file in os.listdir(filtered_dir[method] + proj + "/") if ".csv" in file]
 	for csv_file in csv_files:
 		rank_lst = [] # to save [top-1, top-3, top-5, top-10, top-20]
 		# print(csv_file)
@@ -611,14 +646,14 @@ def calculate_RDTie_outlier(proj):
 
 		rank_lst = [] # to save [top-1, top-3, top-5, top-10, top-20]
 
-		csv_file = ocs_dir + proj + "/rank_based" + str(i) + ".csv"
+		csv_file = ocs_dir + proj + "/newRankedList" + str(i) + ".csv"
 		# csv_file = origin_dir + proj + "/rank_based22.csv"
 
 		pdcontent = pd.read_csv(csv_file, dtype={"act_performance":np.float32, "pre_performance":np.float32})
 
 		predict = [pdcontent.iloc[i]["pre_performance"] for i in range(len(pdcontent))]
 		actual = [pdcontent.iloc[i]["act_performance"] for i in range(len(pdcontent))]
-		anomaly_indexes = [i for i in range(len(pdcontent)) if pdcontent.iloc[i]["isAnomaly"] == -1]
+		anomaly_indexes = [i for i in range(len(pdcontent)) if pdcontent.iloc[i]["splitblock_OneClassSVM"] == -1]
 		# remove the configuration labeled with -1
 		# print(anomaly_indexes)
 
@@ -1731,15 +1766,15 @@ def calculate_rdtie_of_project(projs):
 		with open(result_text, "a") as f:
 			f.write(line)
 
-	# # ## using Direct LTR
-	# print("RDTie using direct LTR")
-	# for proj in new_projs:
-	# 	results = calculate_RDTie_filter(proj, method=2, frac=0.9)
-	# 	line = proj+":"+str(results)+"\n"
-	# 	# print(line)
-	# 	result_text = "../experiment/results/direct_ltr_RDTie.txt"
-	# 	with open(result_text, "a") as f:
-	# 		f.write(line)
+	# ## using Direct LTR
+	print("RDTie using direct LTR")
+	for proj in new_projs:
+		results = calculate_RDTie_filter(proj, method=2, frac=0.9)
+		line = proj+":"+str(results)+"\n"
+		# print(line)
+		result_text = "../experiment/results/direct_ltr_RDTie.txt"
+		with open(result_text, "a") as f:
+			f.write(line)
 
 	# ## using ReConfig (method=1)
 	# Remove 90% tied configurations
@@ -1752,28 +1787,38 @@ def calculate_rdtie_of_project(projs):
 		with open(result_text, "a") as f:
 			f.write(line)
     
-	# # ## using Outlier detection (One class svm)
-	# # Remove the configurations predicted as -1 (outlier)
-	# print("RDTie using Outlier Detection (one class svm)")
-	# for proj in new_projs:
-	# 	results = calculate_RDTie_outlier(proj)
-	# 	line = proj+":"+str(results)+"\n"
-	# 	# print(line)
-	# 	result_text = "../experiment/results/outlier_detection_RDTie.txt"
-	# 	with open(result_text, "a") as f:
-	# 		f.write(line)
+	# ## using Outlier detection (One class svm)
+	# Remove the configurations predicted as -1 (outlier)
+	print("RDTie using Outlier Detection (one class svm)")
+	for proj in new_projs:
+		results = calculate_RDTie_outlier(proj)
+		line = proj+":"+str(results)+"\n"
+		# print(line)
+		result_text = "../experiment/results/outlier_detection_RDTie.txt"
+		with open(result_text, "a") as f:
+			f.write(line)
 
 
 
 	################################################################################
 
-	## using RD* (Nair et al.)
-	print("RDTie using RD* (Nair et al.)")
+	## using RD* to calulate the rank-based(Nair et al.)
+	print("Evaluate rank-based by RD*")
 	for proj in new_projs:
-		results = calculate_Nair_RD(proj)
+		results = calculate_RD_rankbased(proj)
 		line = proj+":"+str(results)+"\n"
 		# print(line)
 		result_text = "../experiment/results/Nair_RD.txt"
+		with open(result_text, "a") as f:
+			f.write(line)
+
+	## using RD* to calulate the reconfig
+	print("Evaluate reconfig by RD*")
+	for proj in new_projs:
+		results = calculate_RD_reconfig(proj)
+		line = proj+":"+str(results)+"\n"
+		# print(line)
+		result_text = "../experiment/results/ReConfig_RD.txt"
 		with open(result_text, "a") as f:
 			f.write(line)
 
@@ -1861,21 +1906,22 @@ def answering_rq_4(projs):
 
 
 def show_argv():
-	cmd_shortcuts = ["projInfo", "projDistr {$index}", "tiedNums", "calRDTie", "vsRankBased", "vsOthers", "removeRatio", "vsRD"]
+	cmd_shortcuts = ["projInfo", "projDistr {$index}", "tiedNums", "calRDTie", "vsRankBased", "vsOthers", "removeRatio", "vsRD","help"]
 	cmd_descripts = ["Showing the basic information (e.g., options and dataset size) in each dataset.", 
 					 "Drawing the performance distribution of specific dataset.", 
 					 "Drawing the number of tied configuretions in each datasets using the rank-based method.",
 					 "Calculating the RDTie of each dataset using different methods.",
-					 "RQ-1: Can ReConfig find better configurations than the rank-based approach?",
-					 "RQ-2: Can the learning-to-rank method in ReConfig outperform comparative methods in finding configurations?",
-					 "RQ-3: How many tied configurations should be filtered out in ReConfig?",
-					 "RQ-4: Is RDTie stable for evaluating the tied prediction?"]
+					 "Answering RQ-1, can ReConfig find better configurations than the rank-based approach?",
+					 "Answering RQ-2, can the learning-to-rank method in ReConfig outperform comparative methods in finding configurations?",
+					 "Answering RQ-3, how many tied configurations should be filtered out in ReConfig?",
+					 "Answering RQ-4, is RDTie stable for evaluating the tied prediction?",
+					 "printing the commands list."]
 
 	print("\n--------------------------------------")
-	print("%-20s | %s"%("Argument", "Description"))
+	print("  %-20s | %s"%("Command", "Description"))
 	print("--------------------------------------")
 	for cmd, des in zip(cmd_shortcuts, cmd_descripts):
-		print("%-20s | %s"%(cmd, des))
+		print(" %-20s | %s"%(cmd, des))
 
 
 if __name__ == "__main__":
@@ -1898,6 +1944,7 @@ if __name__ == "__main__":
 	if len(sys.argv) <= 1:
 		print("[Arguments Format Error]: Try to use the following arguments.")
 		show_argv()
+		# compare_result_bet_methods(projs, '../experiment/results/Nair_RD.txt', '../experiment/results/ReConfig_RD.txt')
 		sys.exit(0)
 
 
@@ -1909,7 +1956,7 @@ if __name__ == "__main__":
 		if len(sys.argv)==3 and sys.argv[2].isdigit:
 			get_performance_distribution(projs, int(sys.argv[2]))
 		else:
-			print("[Arguments Format Error]: You should add a project index after the argument \"projDistr\".")
+			print("[Arguments Format Error]: You should add a project index after the command \"projDistr\".")
 	elif sys.argv[1] == cmd_shortcuts[2]:
 		# tiedNums: Calculating the number of tied configuretions in each datasets using the rank-based method
 		get_tied_top_1(projs)
@@ -1929,34 +1976,7 @@ if __name__ == "__main__":
 		# >>>>>> RQ-4: Is RDTie stable for evaluating the tied prediction?
 		answering_rq_4(projs)
 	else:
-		print("[Arguments Format Error]: Try to use the following arguments.")
+		print("[Arguments Format Error]: Try to use the following commands.")
 		show_argv()
 
-	# #//\\//\\//\\//\\   STEP-1: Obtaining the intermediate results  //\\//\\//\\//\\
 
-	# FUNCTION-1: Calculating the basic information in each dataset
-	# get_basic_info(projs)
-
-	# FUNCTION-2: Calculating the performance distribution of the specific project {:0-35}
-	# get_performance_distribution(projs, 25)
-
-	# FUNCTION-3: Calculating the number of tied configuretions in each datasets using the rank-based method
-	# get_tied_top_1(projs)
-
-	# FUNCTION-4: Calculating the RDTie of each approach using different approaches
-	# calculate_rdtie_of_project(projs) # comment it if you already have these results, otherwise you will cover the results
-
-
-	# #//\\//\\//\\//\\  STEP-2: Answering the research questions  //\\//\\//\\//\\
-
-	# # >>>>>> RQ-1: Can ReConfig find better configurations than the rank-based approach?
-	# answering_rq_1()
-
-	# # >>>>>> RQ-2: Can the learning-to-rank method in ReConfig outperform comparative methods in finding configurations?
-	# answering_rq_2(projs)	
-
-	# # >>>>>> RQ-3: How many tied configurations should be filtered out in ReConfig?
-	# answering_rq_3(projs)
-
-	# # >>>>>> RQ-4: Is RDTie stable for evaluating the tied prediction?
-	# answering_rq_4(projs)
