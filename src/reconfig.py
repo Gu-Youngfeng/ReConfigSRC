@@ -13,7 +13,7 @@ OUTPUT:
     1) re-ranking results on testing pool, i.e., "../experiment/reconfig/"
 
 @author  : Yuntianyi
-@reviewer: Yongfeng
+@refactor: Yongfeng
 """
 
 import os
@@ -23,6 +23,16 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from sklearn.tree import DecisionTreeRegressor
+
+param_ranker  = [0, 1, 2, 3, 4, 6, 7, 8]
+param_mid_cmd = [" -r 5 -i 25 -tolerance 0.001 -reg no-regularization", # 0-MART
+				 " -epoch 100 -layer 1 -node 10 -lr 0.00005", # 1-RankNet
+				 " -round 300 -tc 10", # 2-RankBoost
+				 " -metric2t ERR@10 -round 500 -noeq unspecified -tolerance 0.002 -max 5", # 3-AdaRank (list-wise)
+				 " -metric2t ERR@10 -r 5 -i 25 -tolerance 0.001 -reg no-regularization", # 4-Coordinate Ascent (list-wise)
+				 " -metric2t ERR@10 -r 5 -i 25 -tolerance 0.001 -reg no-regularization", # 6-LambdaMart (list-wise)
+				 "", # 7-ListNet (list-wise)
+				 " -bag 300 -srate 1.0 -frate 0.3 -rtype 0 -tree 1 -leaf 100 -shrinkage 0.1"] # 8-Random Forest
 
 ##########################################
 '''
@@ -728,20 +738,20 @@ def cmd(select, ranker):
 
 ######################################### EDITED BY YONGFENG
 
-def build_l2r_model(ranker):
+def build_l2r_model(ranker_type):
     '''
     Note: execute Ranklib.jar by cmd to get LTR model on validation set(txt file)
     The detail usage of RankLib.jar please refer to website, https://sourceforge.net/p/lemur/wiki/RankLib/
 
-    @param ranker, specify which ranking algorithm we use to build a model
-                    0: MART (gradient boosted regression tree)
-                    1: RankNet
-                    2: RankBoost
-                    3: AdaRank
-                    4: Coordinate Ascent
-                    6: LambdaMART
-                    7: ListNet
-                    8: Random Forests
+    @param ranke_type, specify which ranking algorithm we use to build a model
+        0: MART (gradient boosted regression tree)
+        1: RankNet
+        2: RankBoost
+        3: AdaRank
+        4: Coordinate Ascent
+        6: LambdaMART
+        7: ListNet
+        8: Random Forests
     '''
     infolder = "trainset_txt"
     resultfolder = "rank_model"
@@ -765,8 +775,8 @@ def build_l2r_model(ranker):
             else:
                 name_index = str(fileindex)
             
-            cmd_line = "java -jar RankLib.jar -train " + txtfile + " -ranker " + str(ranker) + \
-                      " -save " + folderpath + "/mymodel_" + name_index + ".txt"
+            cmd_line = "java -jar RankLib.jar -train " + txtfile + " -ranker " + str(param_ranker[ranker_type]) + \
+                      param_mid_cmd[ranker_type] + " -save " + folderpath + "/mymodel_" + name_index + ".txt"
             os.system(cmd_line)
             # print("[command]:", cmd_line)
             fileindex += 1
@@ -848,7 +858,7 @@ def transform_test_results():
 ################################
 
 
-def reconfig():
+def reconfig(ranker_type):
 
     print("STEP-1: predict on the validation set using the sub-train set ...\n")
     predict_on_validation_set()
@@ -866,7 +876,7 @@ def reconfig():
     parse_config("test")
 
     print("STEP-5: build the L2R model to re-rank the prediction of test set ...\n")
-    build_l2r_model(ranker=2) # RankBoost
+    build_l2r_model(ranker_type) 
     rerank_test_set()
 
     print("STEP-6: transform the .txt results into .csv results ... \n")
@@ -877,4 +887,4 @@ if __name__ == "__main__":
     warnings.filterwarnings('ignore')
     pd.set_option('display.width',200)
  
-    reconfig()
+    reconfig(ranker_type=2) # 0,1,2,3,4,5,6,7
