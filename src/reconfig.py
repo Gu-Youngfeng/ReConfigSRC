@@ -25,14 +25,14 @@ from pandas import DataFrame
 from sklearn.tree import DecisionTreeRegressor
 
 param_ranker  = [0, 1, 2, 3, 4, 6, 7, 8]
-param_mid_cmd = [" -r 5 -i 25 -tolerance 0.001 -reg no-regularization", # 0-MART
-				 " -epoch 100 -layer 1 -node 10 -lr 0.00005", # 1-RankNet
-				 " -round 300 -tc 10", # 2-RankBoost
-				 " -metric2t ERR@10 -round 500 -noeq unspecified -tolerance 0.002 -max 5", # 3-AdaRank (list-wise)
-				 " -metric2t ERR@10 -r 5 -i 25 -tolerance 0.001 -reg no-regularization", # 4-Coordinate Ascent (list-wise)
-				 " -metric2t ERR@10 -r 5 -i 25 -tolerance 0.001 -reg no-regularization", # 6-LambdaMart (list-wise)
-				 "", # 7-ListNet (list-wise)
-				 " -bag 300 -srate 1.0 -frate 0.3 -rtype 0 -tree 1 -leaf 100 -shrinkage 0.1"] # 8-Random Forest
+param_mid_cmd = [" -r 5 -i 25 -tolerance 0.001", # 0-MART
+                 " -epoch 100 -layer 1 -node 10 -lr 0.00005", # 1-RankNet
+                 " -round 300 -tc 10", # 2-RankBoost
+                 " -metric2t ERR@10 -round 500 -tolerance 0.002 -max 5", # 3-AdaRank (list-wise)
+                 " -metric2t ERR@10 -r 5 -i 25 -tolerance 0.001 ", # 4-Coordinate Ascent (list-wise)
+                 " -metric2t ERR@10 -r 5 -i 25 -tolerance 0.001 ", # 6-LambdaMart (list-wise)
+                 "", # 7-ListNet (list-wise)
+                 " -bag 300 -srate 1.0 -frate 0.3 -rtype 0 -tree 1 -leaf 100 -shrinkage 0.1"] # 8-Random Forest
 
 ##########################################
 '''
