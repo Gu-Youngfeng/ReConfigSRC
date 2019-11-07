@@ -36,6 +36,7 @@ def remark_anomaly(train,validation):
     
     cart = DecisionTreeRegressor()
     cart.fit(train_independent,train_dependent)
+
     validation_independent = validation[validation.columns[:-2]]
     predicted = cart.predict(validation_independent)  # predict on validation set
     validation['pre_performance'] = predicted
@@ -46,7 +47,7 @@ def remark_anomaly(train,validation):
     result = split_block(validation)
     result_isAnomaly = result[result.columns[:len(validation_independent.columns)]]
     result_isAnomaly['isAnomaly'] = result['isAnomaly']
-    # result_isAnomaly.to_csv("../temp_data/round49.csv", index=False)
+    # result.to_csv("validation01.csv", index=False)
     return result,result_isAnomaly
 
 
@@ -84,10 +85,24 @@ def rf_Anomaly_ratio(train,test): # here train refers to the prediction results 
         test_str_lst = [float(tt) for tt in test_str_lst]
         test_set_num.append(test_str_lst)
 
-    clf = RandomForestClassifier()
+    ## Random Forest
+    # clf = RandomForestClassifier() 
+
+    ## GBRT
+    from sklearn.ensemble import GradientBoostingClassifier
+    clf = GradientBoostingClassifier()
+    clf.fit(train_independent, train_dependent)
+
+    ## AdaBoost
+    # from sklearn.ensemble import AdaBoostClassifier
+    # clf = AdaBoostClassifier(n_estimators=100)
+    # clf.fit(train_independent, train_dependent)
+
+    ## Logistic regression
     # from sklearn.linear_model import LogisticRegression
     # clf = LogisticRegression()
-    clf.fit(train_independent, train_dependent)
+    # clf.fit(train_independent, train_dependent)
+
     test['isAnomaly'] = clf.predict(test_set_num)
     predict_ratio = clf.predict_proba(test_set_num)  # the ratio of prediction, such as [0.9, 0.1]
     # cc1 = 0
@@ -136,14 +151,14 @@ def classification():
     resultfolds = '../experiment/classification/'
 
     dataset_lists = [f[:-4] for f in os.listdir(datafolder) if ".csv" in f] # dataset_lists = ['AJStats', 'Apache', 'BerkelyC', ...]
-    for dataset in dataset_lists: # in each dataset
+    for dataset in dataset_lists[:1]: # in each dataset
         if not os.path.exists(resultfolds + dataset):  # resultfolds + dataset = '../experiment/classification/AJStats/'
             os.makedirs(resultfolds + dataset)
         # trains = [f for f in os.listdir(trainfolds + dataset)] # trains = ["subtrain0.csv","subtrain1.csv",...]
         rounds = len(os.listdir(trainfolds + dataset))
         print(dataset)
         # for i in trains: 
-        for i in range(rounds): # in each round
+        for i in range(rounds)[:1]: # in each round
             validation_path = validationfolds + dataset + '/rank_based' + str(i) + '/' 
             validation = pd.read_csv(validation_path + 'validation_set.csv')  # validation = "../parse_data/data_split/AJStats/rank_based0/validation_set.csv"
             # print(validation_path)
