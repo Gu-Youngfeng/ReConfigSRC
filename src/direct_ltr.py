@@ -577,7 +577,8 @@ def do_parse(dataset, name, index, select, resultfolder):
                 string_write += str(featureid + 1) + ":" + str(feature[featureid]) + " "
             string_write += "#docid = " + str(int(row[0])) + " " + "fileid = " + str(index) + " "
             string_write += "act_rank = " + str(int(row["act_rank"])) + " " + "act_preformance = " + \
-                            str(row["act_performance"])
+                            str(row["act_performance"]) + " " + "predicted_rank = " + str(int(row["pre_rank"])) + \
+                            " " + "predicted_preformance = " + str(row["pre_performance"])
 
             txtfile.write(string_write)
             txtfile.write("\n")
@@ -791,6 +792,7 @@ def transform_test_results():
             #     name_index = str(0) + str(fileindex)
             # else:
             #     name_index = str(fileindex)
+            csvfile.sort_values(by="pre_performance", inplace=True)
 
             csvfile.to_csv(result_folder + '/newRankedList' + str(fileindex) + '.csv', index=False)
 
