@@ -7,17 +7,17 @@ Project _ReConfigSRC_ implements the experiments of ReConfig approach.
 
 ### 2. Environment & Dependency
 
-ReConfigSRC, which is designed by Python language, can be run on Windows or Linux operation system.
-The dependencies include three widely-used Python libraries, i.e., **numpy**, **pandas**, and **sklearn**.
+ReConfigSRC is designed by Python language, so make sure that there is a **Python environments** on your computer.
+Besides, three widely-used Python libraries (**numpy**, **pandas**, and **sklearn**) are also required.
 
 
 ### 3. Experimental Steps
 
 **Step 1:** prepare the raw datasets
 
-Put the raw datasets (.csv format) into the folder `raw_data/`, note that the last column (performance) of each dataset should start with "$<". 
-For example, the dataset of _Noc-obj1.csv_ is as follows,
+The input datasets (in ".csv" format) of ReConfigSRC should be saved in the folder `raw_data/`. Note that the instances in each input dataset consist of a set of options and a performance. 
 
+Here are 3 example instances in dataset "Noc-obj1.csv", each instace has 4 options (width, complexity, fifo, multiplier) and a performance ($<energy).
 
 |width| complexity| fifo| multiplier| $<energy|
 |:--|:--|:--|:--|:--|
@@ -29,7 +29,7 @@ For example, the dataset of _Noc-obj1.csv_ is as follows,
 
 **Step 2:** obtain the results of the rank-based approach
 
-Run the rank-based approach (i.e, `src/rank_based.py`) and obtain the prediction results, which are outputted into the folder `experiment/rank_based/`.
+Run the rank-based approach (i.e, `src/rank_based.py`) and obtain the preliminary prediction results, which are outputted into the folder `experiment/rank_based/`. Note that `src/rank_based.py` must be executed at first.
 
 ```python
 >> python src/rank-based.py
@@ -37,21 +37,20 @@ Run the rank-based approach (i.e, `src/rank_based.py`) and obtain the prediction
 
 **Step 3:** obtain the results of the other approaches
 
-Run the other approaches (i.e., `src/outlier_detection.py`, `src/classfication.py`, `src/random_rank.py`, `src/reconfig.py`, and `src/direct_ltr.py`) 
-and obtain the corresponding ranking results, which are outputted into the folder `experiment/${approach_name}`.
-Note that these five approaches are based on the prediction results of the rank-based approach (outputs of Step 2).
+Run the other approaches (`src/classfication_exd.py`, `src/random_rank.py`, `src/reconfig.py`, etc.) 
+and obtain the corresponding ranking results.
+The prediction results are outputted in the folder `experiment/${approach_name}`.
 
 ```python
->> python src/classfication.py
->> python src/outlier_detection.py
+>> python src/classfication_exd.py
 >> python src/random_rank.py
->> python src/direct_ltr.py
 >> python src/reconfig.py
+>> ...
 ```
 
 **Step 4:** analyze the ranking results
 
-Run the `src/experiment.py` with command to obtain the analysis results under the folder `experiment/results/` then get the answers of RQ1, RQ2, RQ3, and RQ4.
+Run the `src/experiment.py` with command to analyze the results of each approach (in folder `experiment/results/`).
 
 ```python
 >> python src/experiment.py calRDTie
